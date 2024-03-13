@@ -12,7 +12,7 @@ Implements this functionality:
 - Audio processing (TODO)
 - Decision making (TODO)
 
-## PC Setup
+## PC Setup Instructions
 
 - Windows PC setup instructions [here](https://kaia.ai/blog/local-pc-setup-windows/)
 - Windows PC setup instructions [video](https://youtu.be/XOc5kCE3MC0).
@@ -21,7 +21,7 @@ Implements this functionality:
 
 - run `docker pull kaiaai/kaiaai:humble` or `docker pull kaiaai/kaiaai:iron`
 
-## Instructions
+## Bringup Instructions
 
 ```
 # On your host PC, launch Kaia.ai Docker image
