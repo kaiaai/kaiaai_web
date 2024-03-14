@@ -41,7 +41,7 @@ class VideoTransformTrack(MediaStreamTrack):
         # av.VideoFrame yuv420p 640x480
         frame = await self.track.recv()
         img = frame.to_ndarray(format="bgr24")
-        ros2_bridge_node.publish_frame(img)
+        ros2_bridge_node.publish_image(img)
 
         if self.transform == "cartoon":
             # img = frame.to_ndarray(format="bgr24")
@@ -191,10 +191,10 @@ class ROS2BridgeNode(Node):
         super().__init__('web_server')
         self.publisher_ = self.create_publisher(Image, 'image_raw', 10)
         self.bridge = CvBridge()
-    def publish_frame(self, frame):
-        # Input frame cv::Mat
-        self.publisher_.publish(self.bridge.cv2_to_imgmsg(frame))
-        # self.get_logger().info('Publishing video frame')
+    def publish_image(self, img):
+        # Input cv::Mat
+        self.publisher_.publish(self.bridge.cv2_to_imgmsg(img))
+        # self.get_logger().info('Publishing image')
 
 
 def spin_ros2():
