@@ -12,6 +12,10 @@ from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
 from av import VideoFrame
 
+import threading
+import rclpy
+from rclpy.node import Node
+
 ROOT = os.path.dirname(__file__)
 
 logger = logging.getLogger("pc")
@@ -177,7 +181,23 @@ async def on_shutdown(app):
     pcs.clear()
 
 
+class ROS2BridgeNode(Node):
+    def __init__(self):
+        super().__init__('pywebrtc')
+
+
+def spin_ros2():
+     rclpy.spin(ros2_bridge_node)
+
+
 def main(args=None):
+    rclpy.init()
+    global ros2_bridge_node
+    ros2_bridge_node = ROS2BridgeNode()
+
+    ros2_thread = threading.Thread(target=spin_ros2)
+    ros2_thread.start()
+
     parser = argparse.ArgumentParser(
         description="WebRTC audio / video / data-channels demo"
     )
@@ -212,6 +232,10 @@ def main(args=None):
     web.run_app(
         app, access_log=None, host=args.host, port=args.port, ssl_context=ssl_context
     )
+
+    ros2_bridge_node.destroy_node()
+    rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
