@@ -36,6 +36,7 @@ class VideoTransformTrack(MediaStreamTrack):
         self.transform = transform
 
     async def recv(self):
+        # av.VideoFrame yuv420p 640x480
         frame = await self.track.recv()
 
         if self.transform == "cartoon":
@@ -118,8 +119,8 @@ async def offer(request):
 
     # prepare local media
     player = MediaPlayer(os.path.join(ROOT, "demo-instruct.wav"))
-    if args.record_to:
-        recorder = MediaRecorder(args.record_to)
+    if server_args.record_to:
+        recorder = MediaRecorder(server_args.record_to)
     else:
         recorder = MediaBlackhole()
 
@@ -150,7 +151,7 @@ async def offer(request):
                     relay.subscribe(track), transform=params["video_transform"]
                 )
             )
-            if args.record_to:
+            if server_args.record_to:
                 recorder.addTrack(relay.subscribe(track))
 
         @track.on("ended")
@@ -211,16 +212,17 @@ def main(args=None):
     )
     parser.add_argument("--record-to", help="Write received media to a file.")
     parser.add_argument("--verbose", "-v", action="count")
-    args = parser.parse_args()
+    global server_args
+    server_args = parser.parse_args()
 
-    if args.verbose:
+    if server_args.verbose:
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
 
-    if args.cert_file:
+    if server_args.cert_file:
         ssl_context = ssl.SSLContext()
-        ssl_context.load_cert_chain(args.cert_file, args.key_file)
+        ssl_context.load_cert_chain(server_args.cert_file, server_args.key_file)
     else:
         ssl_context = None
 
@@ -230,7 +232,7 @@ def main(args=None):
     app.router.add_get("/client.js", javascript)
     app.router.add_post("/offer", offer)
     web.run_app(
-        app, access_log=None, host=args.host, port=args.port, ssl_context=ssl_context
+        app, access_log=None, host=server_args.host, port=server_args.port, ssl_context=ssl_context
     )
 
     ros2_bridge_node.destroy_node()
