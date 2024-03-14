@@ -15,6 +15,8 @@ from av import VideoFrame
 import threading
 import rclpy
 from rclpy.node import Node
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
 
 ROOT = os.path.dirname(__file__)
 
@@ -38,9 +40,11 @@ class VideoTransformTrack(MediaStreamTrack):
     async def recv(self):
         # av.VideoFrame yuv420p 640x480
         frame = await self.track.recv()
+        img = frame.to_ndarray(format="bgr24")
+        ros2_bridge_node.publish_frame(img)
 
         if self.transform == "cartoon":
-            img = frame.to_ndarray(format="bgr24")
+            # img = frame.to_ndarray(format="bgr24")
 
             # prepare color
             img_color = cv2.pyrDown(cv2.pyrDown(img))
@@ -70,7 +74,7 @@ class VideoTransformTrack(MediaStreamTrack):
             return new_frame
         elif self.transform == "edges":
             # perform edge detection
-            img = frame.to_ndarray(format="bgr24")
+            # img = frame.to_ndarray(format="bgr24")
             img = cv2.cvtColor(cv2.Canny(img, 100, 200), cv2.COLOR_GRAY2BGR)
 
             # rebuild a VideoFrame, preserving timing information
@@ -80,7 +84,7 @@ class VideoTransformTrack(MediaStreamTrack):
             return new_frame
         elif self.transform == "rotate":
             # rotate image
-            img = frame.to_ndarray(format="bgr24")
+            # img = frame.to_ndarray(format="bgr24")
             rows, cols, _ = img.shape
             M = cv2.getRotationMatrix2D((cols / 2, rows / 2), frame.time * 45, 1)
             img = cv2.warpAffine(img, M, (cols, rows))
@@ -184,7 +188,13 @@ async def on_shutdown(app):
 
 class ROS2BridgeNode(Node):
     def __init__(self):
-        super().__init__('pywebrtc')
+        super().__init__('web_server')
+        self.publisher_ = self.create_publisher(Image, 'image_raw', 10)
+        self.bridge = CvBridge()
+    def publish_frame(self, frame):
+        # Input frame cv::Mat
+        self.publisher_.publish(self.bridge.cv2_to_imgmsg(frame))
+        # self.get_logger().info('Publishing video frame')
 
 
 def spin_ros2():
@@ -192,7 +202,7 @@ def spin_ros2():
 
 
 def main(args=None):
-    rclpy.init()
+    rclpy.init(args=args)
     global ros2_bridge_node
     ros2_bridge_node = ROS2BridgeNode()
 
