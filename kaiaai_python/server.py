@@ -177,7 +177,7 @@ async def on_shutdown(app):
     pcs.clear()
 
 
-if __name__ == "__main__":
+def main(args=None):
     parser = argparse.ArgumentParser(
         description="WebRTC audio / video / data-channels demo"
     )
@@ -212,3 +212,6 @@ if __name__ == "__main__":
     web.run_app(
         app, access_log=None, host=args.host, port=args.port, ssl_context=ssl_context
     )
+
+if __name__ == '__main__':
+    main()

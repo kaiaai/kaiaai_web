@@ -22,7 +22,8 @@ setup(
         'console_scripts': [
             'talker = kaiaai_python.publisher_member_function:main',
             'listener = kaiaai_python.subscriber_member_function:main',
-            'img_publisher = cv_basics.webcam_pub:main',
+            'img_publisher = kaiaai_python.webcam_pub:main',
+            'web_server = kaiaai_python.server:main',
         ],
     },
 )
