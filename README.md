@@ -34,10 +34,12 @@ cd /py/ssl && ./ssl-proxy-linux-amd64 -from 0.0.0.0:4430 -to 127.0.0.1:8080 -red
 docker exec -it makerspet bash
 
 # Launch web server
-cd /py/server && python3 server.py
+ros2 run kaiaai_python web_server
 
-# Open a browser on your host PC and navigate to https://localhost:4430
-# Alternatively, open a browser on your smartphone/tablet and navigate to https://YOUR_HOST_PC_IP:4430
+# Open a browser on your host PC
+#   Navigate to https://localhost:4430
+# Open a browser on your smartphone/tablet
+#   Navigate to https://YOUR_HOST_PC_IP:4430
 # Click YES/ALLOW/OK on your browser prompt to start video/audio/data WebRTC streaming
-# A robot's animated interactive face should appear (TODO)
+#   A robot's animated interactive face should appear (TODO)
 ```
