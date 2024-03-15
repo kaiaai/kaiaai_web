@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+  <title>Face Animation</title>
+  <body>
+
+  <style>
+    #face-canvas { background-color: black; }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.20/fabric.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/kaia-face.js@0.1.0/dist/kaia-face.min.js"></script>
+  <script>
+    var face;
+    var myTimer;
+    var timerCntMax = 8;
+    var timerCnt = timerCntMax;
+    var gazeRange = 0.2;
+    var seed = 6;
+    var settings = {};
+    var fromsyn = {};
+    var exprName;
+    var s;
+
+    function random() {
+        seed = (seed * 9301 + 49297) % 233280;
+        var x = seed / 233280;
+        return x - Math.floor(x);
+    }
+
+    var exprOrig = ["annoyed", "anxious", "apologetic", "awkward", "blinking", "bored", "crying",
+      "default", "determined", "embarrased", "evil", "excited", "exhausted", "flustered", "furious",
+      "giggle", "happy", "in-love", "mischievous", "realized-something", "sad", "sassy", "scared",
+      "shocked", "snoozing", "starstruck", "stuck-up", "thinking", "tired", "upset", "winking",
+      "wow"];
+
+    var exprNames = exprOrig.concat(["wow-synonym", "default-synonym", "annoyed-synonym", "sad-synonym",
+      "default-synonym", "default-synonym2", "default-synonym3", "default-synonym4"]);
+
+    var animEffNames = ["swoosh", "road-runner", "splat", "jelly", "bounce"];
+    var animNames = ["wink","widen","eye-roll","tear-drop","blinking","fluctuating","fluctuating-upper","twitching-lower","snoozing"];
+
+    function randomInt(min,max) { return Math.floor(random()*(max-min+1)+min); }
+    function randomFloat(min,max) { return random()*(max-min)+min; }
+
+    function onTimer() {
+      switch(timerCnt) {
+        case 0:
+          timerCnt = timerCntMax+1;
+          exprName = exprNames[randomInt(0, exprNames.length-1)];
+          s = settings[fromsyn[exprName]];
+          console.log(exprName + ' = ' + '(' + s.effect + ',' + s.animation + ',' + s.gaze_speed + ')');
+          face.setExpression(exprName);
+          break;
+        case 3:
+          face.unsetGazeDirection();      
+          console.log('unsetGazeDirection()');
+          break;
+
+        case 5:
+          let exprName3 = exprNames[randomInt(0, exprNames.length-1)];
+          let animName = animNames[randomInt(0, animEffNames.length-1)];
+          if (random() > 0.33) {
+            face.setAnimation(exprName3,animName,{enabled:true});
+            console.log('setAnimation(' + exprName3 + ',' + animName + ')');
+            settings[fromsyn[exprName3]].animation = animName;
+          } else {
+            face.unsetAnimation(exprName3,true);
+            console.log('unsetAnimation(' + exprName3 + ',true)');
+            settings[fromsyn[exprName3]].animation = '';
+          }
+
+          let exprName2 = exprNames[randomInt(0, exprNames.length-1)];
+          let animEffName = animEffNames[randomInt(0, animEffNames.length-1)];
+          if (random() > 0.33) {
+            face.setAnimationEffect(exprName2,animEffName,{enabled:true});
+            console.log('setAnimationEffect(' + exprName2 + ',' + animEffName + ')');
+            settings[fromsyn[exprName2]].effect = animEffName;
+          } else {
+            face.unsetAnimationEffect(exprName2,true);
+            console.log('unsetAnimationEffect(' + exprName2 + ',true)');
+            settings[fromsyn[exprName2]].effect = '';
+          }
+
+          let exprName4 = exprNames[randomInt(0, exprNames.length-1)];
+          let gazeSpeed = randomInt(10, 100);
+          face.setGazeSpeed(exprName4, gazeSpeed, "linear");
+          console.log('setGazeSpeed(' + exprName3 + ',' + gazeSpeed + ')');
+          settings[fromsyn[exprName4]].gaze_speed = gazeSpeed;
+
+          s = settings[fromsyn[exprName]];
+          console.log(exprName + ' = ' + '(' + s.effect + ',' + s.animation + ',' + s.gaze_speed + ')');
+
+          face.playAnimation();
+          console.log('playAnimation()');
+
+          break;
+
+        default:
+          let x = randomFloat(-gazeRange, gazeRange) + 0.5;
+          let y = randomFloat(-gazeRange, gazeRange) + 0.5;
+          face.setGazeDirection(x, y);
+          console.log(x.toFixed(2) + ", " + y.toFixed(2));
+      }
+      timerCnt = timerCnt-1;
+    }
+
+    onload = function(){
+
+      face_size = Math.min(window.innerWidth, window.innerHeight) - 100;
+      face = new Face({face_width:face_size,face_height:face_size});
+
+      face.setGazeSpeed("default", 10000, "linear");
+
+      face.addSynonyms("wow", "wow-synonym");
+      //face.defineSynonyms(["default", "default-synonym"]);
+      face.addSynonyms("annoyed", ["annoyed-synonym"]);
+      face.addSynonyms("sad", "sad-synonym");
+      face.addSynonyms("default", "default-synonym", "default-synonym2", ["default-synonym3", "default-synonym4"]);
+
+      var arrayLength = exprOrig.length;
+      for (var i = 0; i < arrayLength; i++) {
+        var v = exprOrig[i];
+        fromsyn[v] = v;
+        settings[v] = {effect : '', animation : '', gaze_speed : ''};
+      }
+      fromsyn['wow-synonym'] = 'wow';
+      fromsyn['annoyed-synonym'] = 'annoyed';
+      fromsyn['sad-synonym'] = 'sad';
+      fromsyn['sad-synonym2'] = 'sad';
+      fromsyn['sad-synonym3'] = 'sad';
+      fromsyn['default-synonym'] = 'default';
+      fromsyn['default-synonym2'] = 'default';
+      fromsyn['default-synonym3'] = 'default';
+      fromsyn['default-synonym4'] = 'default';
+
+      // TODO tweak JSON settings
+
+      // Animation effects: swoosh, road-runner, splat, jelly, bounce
+      //face.setAnimationEffect("*","swoosh",{enabled:true,elements:["right-eye","left-eye"],speed:30,'tail-speed':60,'tail-dampent':2.0});
+      //face.setAnimationEffect("default","road-runner",{enabled:true,elements:["left-eye"],speed:40,jump:0.7,'jump-restitution':0.1});
+      //face.setAnimationEffect("default","splat",{enabled:true,elements:["right-eye"],speed:20,mass:0.4,dampent:0.5});
+      //face.setAnimationEffect("*","jelly",{enabled:true,elements:["right-eye"],speed:20,dampent:1.0});
+      //face.setAnimationEffect("*","bounce",{enabled:true,elements:["left-eye"],speed:50,dampent:0.1});
+      //face.setAnimationEffect("default-synonym","bounce",{enabled:true});  
+      //face.setAnimationEffect("default-synonym","jelly",{enabled:true});
+
+      // "wink","widen","eye-roll","tear-drop","blinking","fluctuating","fluctuating-upper","twitching-lower","snoozing"
+      //face.setAnimation("*","wink",{enabled:true,duration:200,easing:'ease-out',scaleY:0.3,elements:['left-eye']}); // one-shot
+      //face.setAnimation("*","widen",{enabled:true,duration:600,easing:'ease-in',scaleY:1.5,scaleX:1.5,elements:['left-eye']}); // one-shot
+      //face.setAnimation("*","eye-roll",{enabled:true,radius:0.3,duration:500,elements:["left-eye","right-eye"],easing:linear}); // one-shot
+
+      //face.setAnimation("*","tear-drop",{enabled:true,elements:["left-eye"],"average-delay":2000,duration:500,easing:'ease-out',stroke:'blue','color':'cyan',random:false}); // continuous
+      //face.setAnimation("*","blinking",{enabled:true,'average-delay':3000,scaleY:0.2,duration:100,elements:["left-eye","right-eye"],"easing":"ease-in-out"}); // continuous
+      //face.setAnimation("*","fluctuating",{enabled:true,elements:["right-eye"],"average-delay":1000,duration:800,easing:'ease-in-out',scaleY:0.5,scaleX:2.0}); // continuous  
+      //face.setAnimation("*","fluctuating-upper",{enabled:true,elements:["right-eye"],"average-delay":3000,duration:600,easing:"ease-out",top:0.8}); // continuous
+      //face.setAnimation("*","twitching-lower",{enabled:true,elements:["left-eye","right-eye"],"average-delay":3000,duration:500,left:0.3,easing:"ease-in"}); // continuous
+      //face.setAnimation("*","snoozing",{enabled:true,el  ements:["right-eye"],"average-delay":2000,duration:3000,easing:'ease-out',left:-0.3,top:-0.3,"font-size":40,color:'cyan',random:false}); // continuous
+
+      //face.unsetAnimation("*",true);
+
+
+      face.onload=function( fac ){
+        say('scroll ' + document.body.scrollHeight + 'x' + document.body.scrollWidth);
+        exprName = 'default';
+        face.setExpression(exprName);
+        myTimer = setInterval(onTimer, 1000);
+      };
+    };
+
+    function say(text) { document.getElementById('status').innerHTML = text; }
+  </script>
+  <canvas id="face-canvas"></canvas>
+  <div id="status">status here</div>
+  </body>
+</html>

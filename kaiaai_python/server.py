@@ -18,7 +18,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
-ROOT = os.path.dirname(__file__)
+ROOT = os.path.join(os.path.dirname(__file__), "../public")
 
 logger = logging.getLogger("pc")
 pcs = set()
@@ -41,7 +41,7 @@ class VideoTransformTrack(MediaStreamTrack):
         # av.VideoFrame yuv420p 640x480
         frame = await self.track.recv()
         img = frame.to_ndarray(format="bgr24")
-        ros2_bridge_node.publish_frame(img)
+        ros2_bridge_node.publish_image(img)
 
         if self.transform == "cartoon":
             # img = frame.to_ndarray(format="bgr24")
@@ -191,10 +191,10 @@ class ROS2BridgeNode(Node):
         super().__init__('web_server')
         self.publisher_ = self.create_publisher(Image, 'image_raw', 10)
         self.bridge = CvBridge()
-    def publish_frame(self, frame):
-        # Input frame cv::Mat
-        self.publisher_.publish(self.bridge.cv2_to_imgmsg(frame))
-        # self.get_logger().info('Publishing video frame')
+    def publish_image(self, img):
+        # Input cv::Mat
+        self.publisher_.publish(self.bridge.cv2_to_imgmsg(img))
+        # self.get_logger().info('Publishing image')
 
 
 def spin_ros2():
@@ -239,7 +239,8 @@ def main(args=None):
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
     app.router.add_get("/", index)
-    app.router.add_get("/client.js", javascript)
+    # app.router.add_get("/client.js", javascript)
+    app.router.add_static('/', path=ROOT) # follow_symlinks=True
     app.router.add_post("/offer", offer)
     web.run_app(
         app, access_log=None, host=server_args.host, port=server_args.port, ssl_context=ssl_context
