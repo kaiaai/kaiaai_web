@@ -23,4 +23,7 @@ setup(
             'web_server = kaiaai_python.server:main',
         ],
     },
+    scripts=[
+        'scripts/run_ssl.sh',
+    ],
 )
