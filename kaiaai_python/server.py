@@ -18,7 +18,14 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
-ROOT = os.path.join(os.path.dirname(__file__), "../public")
+args_root_path = None
+args_image_topic = None
+args_cert_file = None
+args_key_file = None
+args_host = None
+args_port = None
+args_verbose = False
+args_record_to = None
 
 logger = logging.getLogger("pc")
 pcs = set()
@@ -99,13 +106,13 @@ class VideoTransformTrack(MediaStreamTrack):
 
 
 async def index(request):
-    content = open(os.path.join(ROOT, "index.html"), "r").read()
+    content = open(os.path.join(args_root_path, "index.html"), "r").read()
     return web.Response(content_type="text/html", text=content)
 
 
-async def javascript(request):
-    content = open(os.path.join(ROOT, "client.js"), "r").read()
-    return web.Response(content_type="application/javascript", text=content)
+# async def javascript(request):
+#     content = open(os.path.join(args_root_path, "client.js"), "r").read()
+#     return web.Response(content_type="application/javascript", text=content)
 
 
 async def offer(request):
@@ -122,9 +129,9 @@ async def offer(request):
     log_info("Created for %s", request.remote)
 
     # prepare local media
-    player = MediaPlayer(os.path.join(ROOT, "demo-instruct.wav"))
-    if server_args.record_to:
-        recorder = MediaRecorder(server_args.record_to)
+    player = MediaPlayer(os.path.join(args_root_path, "demo-instruct.wav"))
+    if args_record_to:
+        recorder = MediaRecorder(args_record_to)
     else:
         recorder = MediaBlackhole()
 
@@ -155,7 +162,7 @@ async def offer(request):
                     relay.subscribe(track), transform=params["video_transform"]
                 )
             )
-            if server_args.record_to:
+            if args_record_to:
                 recorder.addTrack(relay.subscribe(track))
 
         @track.on("ended")
@@ -189,7 +196,30 @@ async def on_shutdown(app):
 class ROS2BridgeNode(Node):
     def __init__(self):
         super().__init__('web_server')
-        self.publisher_ = self.create_publisher(Image, 'image_raw', 10)
+
+        global args_image_topic, args_cert_file, args_key_file, args_root_path
+        global args_host, args_port, args_record_to, args_verbose
+
+        default_root_path = os.path.join(os.path.dirname(__file__), "../public")
+        self.declare_parameter('image_topic', '/color_camera/image_raw')
+        self.declare_parameter('cert_file', '')
+        self.declare_parameter('key_file', '')
+        self.declare_parameter('host', '0.0.0.0')
+        self.declare_parameter('port', 8080)
+        self.declare_parameter('verbose', False)
+        self.declare_parameter('record_to', '')
+        self.declare_parameter('root_path', default_root_path)
+
+        args_image_topic = self.get_parameter('image_topic').value
+        args_cert_file = self.get_parameter('cert_file').value
+        args_key_file = self.get_parameter('key_file').value
+        args_host = self.get_parameter('host').value
+        args_port = self.get_parameter('port').value
+        args_verbose = self.get_parameter('verbose').value
+        args_record_to = self.get_parameter('record_to').value
+        args_root_path = self.get_parameter('root_path').value
+
+        self.publisher_ = self.create_publisher(Image, args_image_topic, 10)
         self.bridge = CvBridge()
     def publish_image(self, img):
         # Input cv::Mat
@@ -203,47 +233,59 @@ def spin_ros2():
 
 def main(args=None):
     rclpy.init(args=args)
+
     global ros2_bridge_node
     ros2_bridge_node = ROS2BridgeNode()
 
     ros2_thread = threading.Thread(target=spin_ros2)
     ros2_thread.start()
 
-    parser = argparse.ArgumentParser(
-        description="WebRTC audio / video / data-channels demo"
-    )
-    parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
-    parser.add_argument("--key-file", help="SSL key file (for HTTPS)")
-    parser.add_argument(
-        "--host", default="0.0.0.0", help="Host for HTTP server (default: 0.0.0.0)"
-    )
-    parser.add_argument(
-        "--port", type=int, default=8080, help="Port for HTTP server (default: 8080)"
-    )
-    parser.add_argument("--record-to", help="Write received media to a file.")
-    parser.add_argument("--verbose", "-v", action="count")
-    global server_args
-    server_args = parser.parse_args()
+    # parser = argparse.ArgumentParser(
+    #     description="WebRTC audio / video / data-channels demo"
+    # )
+    # parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
+    # parser.add_argument("--key-file", help="SSL key file (for HTTPS)")
+    # parser.add_argument(
+    #     "--host", default="0.0.0.0", help="Host for HTTP server (default: 0.0.0.0)"
+    # )
+    # parser.add_argument(
+    #     "--port", type=int, default=8080, help="Port for HTTP server (default: 8080)"
+    # )
+    # parser.add_argument("--record-to", help="Write received media to a file.")
+    # parser.add_argument("--verbose", "-v", action="count")
 
-    if server_args.verbose:
+    # global server_args
+    # server_args = parser.parse_args()
+    # server_args = argparse.Namespace()
+    # server_args.cert_file=None
+    # server_args.key_file=None
+    # server_args.host='0.0.0.0'
+    # server_args.port=8080
+    # server_args.record_to=None
+    # server_args.verbose=None
+    # print(server_args)
+
+    if args_verbose:
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
 
-    if server_args.cert_file:
+    if args_cert_file and args_key_file:
         ssl_context = ssl.SSLContext()
-        ssl_context.load_cert_chain(server_args.cert_file, server_args.key_file)
+        ssl_context.load_cert_chain(args_cert_file, args_key_file)
     else:
         ssl_context = None
+
+    print("Root path: " + args_root_path)
 
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
     app.router.add_get("/", index)
     # app.router.add_get("/client.js", javascript)
-    app.router.add_static('/', path=ROOT) # follow_symlinks=True
+    app.router.add_static('/', path=args_root_path, follow_symlinks=True)
     app.router.add_post("/offer", offer)
     web.run_app(
-        app, access_log=None, host=server_args.host, port=server_args.port, ssl_context=ssl_context
+        app, access_log=None, host=args_host, port=args_port, ssl_context=ssl_context
     )
 
     ros2_bridge_node.destroy_node()
