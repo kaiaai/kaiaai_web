@@ -18,7 +18,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
-ROOT = os.path.dirname(__file__)
+ROOT = os.path.join(os.path.dirname(__file__), "public")
 
 logger = logging.getLogger("pc")
 pcs = set()
@@ -239,7 +239,8 @@ def main(args=None):
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
     app.router.add_get("/", index)
-    app.router.add_get("/client.js", javascript)
+    # app.router.add_get("/client.js", javascript)
+    app.router.add_static('/', path=ROOT) # follow_symlinks=True
     app.router.add_post("/offer", offer)
     web.run_app(
         app, access_log=None, host=server_args.host, port=server_args.port, ssl_context=ssl_context
