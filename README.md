@@ -28,7 +28,7 @@ Implements this functionality:
 docker run --name makerspet -it --rm -p 8888:8888/udp -p 4430:4430/tcp -e DISPLAY=host.docker.internal:0.0 -e LIBGL_ALWAYS_INDIRECT=0 kaiaai/kaiaai:humble
 
 # Launch SSL proxy
-cd /py/ssl && ./ssl-proxy-linux-amd64 -from 0.0.0.0:4430 -to 127.0.0.1:8080 -redirectHTTP
+ros2 run kaiaai_python ssl_proxy.sh
 
 # On your host PC, open one more bash session
 docker exec -it makerspet bash
