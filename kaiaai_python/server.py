@@ -18,7 +18,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
-ROOT = os.path.join(os.path.dirname(__file__), "public")
+ROOT = os.path.join(os.path.dirname(__file__), "../public")
 
 logger = logging.getLogger("pc")
 pcs = set()
