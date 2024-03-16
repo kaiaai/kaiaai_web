@@ -227,6 +227,10 @@ class ROS2BridgeNode(Node):
         args_record_path = self.get_parameter('video.record_path').value
         args_root_path = self.get_parameter('server.root_path').value
 
+        logger.info('Root ' + args_root_path)
+        if args_temp_cert:
+            logger.info('Using temporary SSL certs')
+
         self.publisher_ = self.create_publisher(Image, args_image_topic, 10)
         self.bridge = CvBridge()
     def publish_image(self, img):
@@ -239,7 +243,7 @@ def spin_ros2():
      rclpy.spin(ros2_bridge_node)
 
 
-def generate_cert():
+def generate_cert(
     emailAddress="emailAddress",
     commonName="commonName",
     countryName="NT",
@@ -249,13 +253,11 @@ def generate_cert():
     organizationUnitName="organizationUnitName",
     serialNumber=0,
     validityStartInSeconds=0,
-    validityEndInSeconds=10*365*24*60*60,
+    validityEndInSeconds=10*365*24*60*60):
     #can look at generated file using openssl:
     #openssl x509 -inform pem -in selfsigned.crt -noout -text
-    # create a key pair
     k = crypto.PKey()
     k.generate_key(crypto.TYPE_RSA, 4096)
-    # create a self-signed cert
     cert = crypto.X509()
     cert.get_subject().C = countryName
     cert.get_subject().ST = stateOrProvinceName
@@ -270,8 +272,7 @@ def generate_cert():
     cert.set_issuer(cert.get_subject())
     cert.set_pubkey(k)
     cert.sign(k, 'sha512')
-
-    return cert
+    return cert, k
 
 
 def main(args=None):
@@ -283,62 +284,26 @@ def main(args=None):
     ros2_thread = threading.Thread(target=spin_ros2)
     ros2_thread.start()
 
-    # parser = argparse.ArgumentParser(
-    #     description="WebRTC audio / video / data-channels demo"
-    # )
-    # parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
-    # parser.add_argument("--key-file", help="SSL key file (for HTTPS)")
-    # parser.add_argument(
-    #     "--host", default="0.0.0.0", help="Host for HTTP server (default: 0.0.0.0)"
-    # )
-    # parser.add_argument(
-    #     "--port", type=int, default=8080, help="Port for HTTP server (default: 8080)"
-    # )
-    # parser.add_argument("--record-to", help="Write received media to a file.")
-    # parser.add_argument("--verbose", "-v", action="count")
-
-    # global server_args
-    # server_args = parser.parse_args()
-    # server_args = argparse.Namespace()
-    # server_args.cert_file=None
-    # server_args.key_file=None
-    # server_args.host='0.0.0.0'
-    # server_args.port=8080
-    # server_args.record_path=None
-    # server_args.verbose=None
-    # print(server_args)
-
-    # if args_verbose:
-    #     logging.basicConfig(level=logging.DEBUG)
-    # else:
-    #     logging.basicConfig(level=logging.INFO)
-
-    # args_cert_file = "/ros_ws/selfsigned.crt"
-    # args_key_file = "/ros_ws/private.key"
     global args_temp_cert, args_cert_file, args_key_file, args_host, args_port
-    if args_temp_cert:
-        cert = generate_cert()
 
-        cert_file = tempfile.NamedTemporaryFile(delete=False)
+    if args_temp_cert:
+        cert, pub_key = generate_cert()
+
+        cert_file = tempfile.NamedTemporaryFile(delete=False, mode='wt')
         args_cert_file = cert_file.name
-        # KEY_FILE = "private.key",
-        # CERT_FILE="selfsigned.crt"):
-        # with open(CERT_FILE, "wt") as f:
         cert_file.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"))
         cert_file.close()
 
-        key_file = tempfile.NamedTemporaryFile(delete=False)
+        key_file = tempfile.NamedTemporaryFile(delete=False, mode='wt')
         args_key_file = key_file.name
-        # with open(KEY_FILE, "wt") as f:
-        key_file.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))
+        key_file.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, pub_key).decode("utf-8"))
+        key_file.close()
 
     if args_cert_file and args_key_file:
         ssl_context = ssl.SSLContext()
         ssl_context.load_cert_chain(args_cert_file, args_key_file)
     else:
         ssl_context = None
-
-    print("Root path: " + args_root_path)
 
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
@@ -349,6 +314,10 @@ def main(args=None):
     web.run_app(
         app, access_log=None, host=args_host, port=args_port, ssl_context=ssl_context
     )
+
+    if args_temp_cert:
+        os.remove(args_cert_file)
+        os.remove(args_key_file)
 
     ros2_bridge_node.destroy_node()
     rclpy.shutdown()

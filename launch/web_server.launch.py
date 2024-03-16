@@ -18,39 +18,30 @@ import os, re
 from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription, LaunchContext
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument, OpaqueFunction
-from launch.substitutions import LaunchConfiguration
+from launch.actions import OpaqueFunction
 
 
-def make_rviz2_node(context: LaunchContext):  #, robot_model):
-    robot_model_str = context.perform_substitution(robot_model)
-
+def make_web_server_node(context: LaunchContext):
+    package_name = 'kaiaai_python'
     web_server_config_path = os.path.join(
-        get_package_share_path(robot_model_str),
+        get_package_share_path(package_name),
         'config',
         'web_server.yaml')
     print("Web server config : {}".format(web_server_config_path))
 
     return [
         Node(
-            package='kaiaai_python',
+            package=package_name,
             executable='web_server',
             name='web_server',
-            arguments=['-d', web_server_config_path],
-            # parameters=[{'use_sim_time': use_sim_time_str.lower() == 'true'}],
-            output='screen'
+            parameters = [web_server_config_path],
+            output='screen',
         )
     ]
 
 def generate_launch_description():
 
     return LaunchDescription([
-        # DeclareLaunchArgument(
-        #     name='robot_model',
-        #     default_value='makerspet_snoopy',
-        #     description='Robot description package name'
-        # ),
-        OpaqueFunction(function=make_rviz2_node, args=[
-        #     LaunchConfiguration('robot_model'),
+        OpaqueFunction(function=make_web_server_node, args=[
         ])
     ])
