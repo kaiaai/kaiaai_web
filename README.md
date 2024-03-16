@@ -3,7 +3,7 @@
 Implements this functionality:
 - WebRTC setup
   - video, audio and data channels
-  - a WebRTC-to-ROS2 bridge (TODO)
+  - a WebRTC-to-ROS2 bridge
 - Web server setup
   - a website for robot's smartphone/tablet (TODO)
   - SSL provider
@@ -43,3 +43,17 @@ ros2 run kaiaai_python web_server
 # Click YES/ALLOW/OK on your browser prompt to start video/audio/data WebRTC streaming
 #   A robot's animated interactive face should appear (TODO)
 ```
+
+## Release notes
+
+### v0.1.0 in debug
+- set up aiohttp web server with aiortc WebRTC
+- added WebRTC-to-ROS2 bridge
+  - browser webcam video streams over WebRTC, gets published to ROS2
+- ROS2 style web server parameters
+  - logging from within web server to ROS2 does not work
+- enabled SSL support using temporary certs
+  - SSL certs replace launching a separate ssl-proxy
+- web server launch file
+- added [kaia-face.js](https://github.com/kaiaai/kaia-face.js) example
+- added web cam FPS selection
