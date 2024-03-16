@@ -126,12 +126,12 @@ async def offer(request):
     pc_id = "PeerConnection(%s)" % uuid.uuid4()
     pcs.add(pc)
 
-    def log_info(msg, *args):
+    def log_debug(msg, *args):
         # logger.info(pc_id + " " + msg, *args)
         global logger
-        logger.debug(pc_id + " " + msg, *args)
+        logger.debug(pc_id + " " + str(*args))
 
-    log_info("Created for %s", request.remote)
+    log_debug("Created for %s", request.remote)
 
     # prepare local media
     player = MediaPlayer(os.path.join(args_root_path, "demo-instruct.wav"))
@@ -149,14 +149,14 @@ async def offer(request):
 
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
-        log_info("Connection state is %s", pc.connectionState)
+        log_debug("Connection state is %s", pc.connectionState)
         if pc.connectionState == "failed":
             await pc.close()
             pcs.discard(pc)
 
     @pc.on("track")
     def on_track(track):
-        log_info("Track %s received", track.kind)
+        log_debug("Track %s received", track.kind)
 
         if track.kind == "audio":
             pc.addTrack(player.audio)
@@ -172,7 +172,7 @@ async def offer(request):
 
         @track.on("ended")
         async def on_ended():
-            log_info("Track %s ended", track.kind)
+            log_debug("Track %s ended", track.kind)
             await recorder.stop()
 
     # handle offer
@@ -230,6 +230,8 @@ class ROS2BridgeNode(Node):
         logger.info('Root ' + args_root_path)
         if args_temp_cert:
             logger.info('Using temporary SSL certs')
+        protocol = 'https' if args_temp_cert or (args_cert_file and args_key_file) else 'http'
+        logger.info(protocol + '://' + args_host + ':' + str(args_port) + '/')
 
         self.publisher_ = self.create_publisher(Image, args_image_topic, 10)
         self.bridge = CvBridge()
