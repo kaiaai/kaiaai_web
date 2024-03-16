@@ -27,7 +27,6 @@ args_key_file = None
 args_temp_cert = None
 args_host = None
 args_port = None
-args_verbose = False
 args_record_path = None
 
 # logger = logging.getLogger("pc")
@@ -207,7 +206,7 @@ class ROS2BridgeNode(Node):
         logger = self.get_logger()
 
         global args_image_topic, args_cert_file, args_key_file, args_root_path
-        global args_host, args_port, args_record_path, args_verbose, args_temp_cert
+        global args_host, args_port, args_record_path, args_temp_cert
 
         default_root_path = os.path.join(os.path.dirname(__file__), "../public")
         self.declare_parameter('video.topic_name_pub', '/color_camera/image_raw')
@@ -215,7 +214,6 @@ class ROS2BridgeNode(Node):
         self.declare_parameter('server.ssl.key_file', '')
         self.declare_parameter('server.host', '0.0.0.0')
         self.declare_parameter('server.port', 8080)
-        self.declare_parameter('server.verbose', False)
         self.declare_parameter('server.ssl.temp_cert', False)
         self.declare_parameter('video.record_path', '')
         self.declare_parameter('server.root_path', default_root_path)
@@ -226,7 +224,6 @@ class ROS2BridgeNode(Node):
         args_temp_cert = self.get_parameter('server.ssl.temp_cert').value
         args_host = self.get_parameter('server.host').value
         args_port = self.get_parameter('server.port').value
-        args_verbose = self.get_parameter('server.verbose').value
         args_record_path = self.get_parameter('video.record_path').value
         args_root_path = self.get_parameter('server.root_path').value
 
@@ -242,7 +239,7 @@ def spin_ros2():
      rclpy.spin(ros2_bridge_node)
 
 
-def generate_cert(
+def generate_cert():
     emailAddress="emailAddress",
     commonName="commonName",
     countryName="NT",
@@ -311,13 +308,14 @@ def main(args=None):
     # server_args.verbose=None
     # print(server_args)
 
-    if args_verbose:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.INFO)
+    # if args_verbose:
+    #     logging.basicConfig(level=logging.DEBUG)
+    # else:
+    #     logging.basicConfig(level=logging.INFO)
 
     # args_cert_file = "/ros_ws/selfsigned.crt"
     # args_key_file = "/ros_ws/private.key"
+    global args_temp_cert, args_cert_file, args_key_file, args_host, args_port
     if args_temp_cert:
         cert = generate_cert()
 
