@@ -1,7 +1,7 @@
 import argparse
 import asyncio
 import json
-import logging
+# import logging
 import os
 import ssl
 import uuid
@@ -30,7 +30,8 @@ args_port = None
 args_verbose = False
 args_record_path = None
 
-logger = logging.getLogger("pc")
+# logger = logging.getLogger("pc")
+logger = None
 pcs = set()
 relay = MediaRelay()
 
@@ -127,7 +128,9 @@ async def offer(request):
     pcs.add(pc)
 
     def log_info(msg, *args):
-        logger.info(pc_id + " " + msg, *args)
+        # logger.info(pc_id + " " + msg, *args)
+        global logger
+        logger.debug(pc_id + " " + msg, *args)
 
     log_info("Created for %s", request.remote)
 
@@ -200,6 +203,9 @@ class ROS2BridgeNode(Node):
     def __init__(self):
         super().__init__('web_server')
 
+        global logger
+        logger = self.get_logger()
+
         global args_image_topic, args_cert_file, args_key_file, args_root_path
         global args_host, args_port, args_record_path, args_verbose, args_temp_cert
 
@@ -229,7 +235,7 @@ class ROS2BridgeNode(Node):
     def publish_image(self, img):
         # Input cv::Mat
         self.publisher_.publish(self.bridge.cv2_to_imgmsg(img))
-        # self.get_logger().info('Publishing image')
+        # logger.debug('Publishing image')
 
 
 def spin_ros2():
