@@ -231,7 +231,8 @@ class ROS2BridgeNode(Node):
         if args_temp_cert:
             logger.info('Using temporary SSL certs')
         protocol = 'https' if args_temp_cert or (args_cert_file and args_key_file) else 'http'
-        logger.info(protocol + '://' + args_host + ':' + str(args_port) + '/')
+        host = 'localhost' if args_host == '0.0.0.0' else args_host
+        logger.info(protocol + '://' + host + ':' + str(args_port) + '/')
 
         self.publisher_ = self.create_publisher(Image, args_image_topic, 10)
         self.bridge = CvBridge()
