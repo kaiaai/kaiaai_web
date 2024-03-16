@@ -17,15 +17,18 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
+from OpenSSL import crypto, SSL
+import tempfile
 
 args_root_path = None
 args_image_topic = None
 args_cert_file = None
 args_key_file = None
+args_temp_cert = None
 args_host = None
 args_port = None
 args_verbose = False
-args_record_to = None
+args_record_path = None
 
 logger = logging.getLogger("pc")
 pcs = set()
@@ -130,8 +133,8 @@ async def offer(request):
 
     # prepare local media
     player = MediaPlayer(os.path.join(args_root_path, "demo-instruct.wav"))
-    if args_record_to:
-        recorder = MediaRecorder(args_record_to)
+    if args_record_path:
+        recorder = MediaRecorder(args_record_path)
     else:
         recorder = MediaBlackhole()
 
@@ -162,7 +165,7 @@ async def offer(request):
                     relay.subscribe(track), transform=params["video_transform"]
                 )
             )
-            if args_record_to:
+            if args_record_path:
                 recorder.addTrack(relay.subscribe(track))
 
         @track.on("ended")
@@ -198,26 +201,28 @@ class ROS2BridgeNode(Node):
         super().__init__('web_server')
 
         global args_image_topic, args_cert_file, args_key_file, args_root_path
-        global args_host, args_port, args_record_to, args_verbose
+        global args_host, args_port, args_record_path, args_verbose, args_temp_cert
 
         default_root_path = os.path.join(os.path.dirname(__file__), "../public")
-        self.declare_parameter('image_topic', '/color_camera/image_raw')
-        self.declare_parameter('cert_file', '')
-        self.declare_parameter('key_file', '')
-        self.declare_parameter('host', '0.0.0.0')
-        self.declare_parameter('port', 8080)
-        self.declare_parameter('verbose', False)
-        self.declare_parameter('record_to', '')
-        self.declare_parameter('root_path', default_root_path)
+        self.declare_parameter('video.topic_name_pub', '/color_camera/image_raw')
+        self.declare_parameter('server.ssl.cert_file', '')
+        self.declare_parameter('server.ssl.key_file', '')
+        self.declare_parameter('server.host', '0.0.0.0')
+        self.declare_parameter('server.port', 8080)
+        self.declare_parameter('server.verbose', False)
+        self.declare_parameter('server.ssl.temp_cert', False)
+        self.declare_parameter('video.record_path', '')
+        self.declare_parameter('server.root_path', default_root_path)
 
-        args_image_topic = self.get_parameter('image_topic').value
-        args_cert_file = self.get_parameter('cert_file').value
-        args_key_file = self.get_parameter('key_file').value
-        args_host = self.get_parameter('host').value
-        args_port = self.get_parameter('port').value
-        args_verbose = self.get_parameter('verbose').value
-        args_record_to = self.get_parameter('record_to').value
-        args_root_path = self.get_parameter('root_path').value
+        args_image_topic = self.get_parameter('video.topic_name_pub').value
+        args_cert_file = self.get_parameter('server.ssl.cert_file').value
+        args_key_file = self.get_parameter('server.ssl.key_file').value
+        args_temp_cert = self.get_parameter('server.ssl.temp_cert').value
+        args_host = self.get_parameter('server.host').value
+        args_port = self.get_parameter('server.port').value
+        args_verbose = self.get_parameter('server.verbose').value
+        args_record_path = self.get_parameter('video.record_path').value
+        args_root_path = self.get_parameter('server.root_path').value
 
         self.publisher_ = self.create_publisher(Image, args_image_topic, 10)
         self.bridge = CvBridge()
@@ -229,6 +234,41 @@ class ROS2BridgeNode(Node):
 
 def spin_ros2():
      rclpy.spin(ros2_bridge_node)
+
+
+def generate_cert(
+    emailAddress="emailAddress",
+    commonName="commonName",
+    countryName="NT",
+    localityName="localityName",
+    stateOrProvinceName="stateOrProvinceName",
+    organizationName="organizationName",
+    organizationUnitName="organizationUnitName",
+    serialNumber=0,
+    validityStartInSeconds=0,
+    validityEndInSeconds=10*365*24*60*60,
+    #can look at generated file using openssl:
+    #openssl x509 -inform pem -in selfsigned.crt -noout -text
+    # create a key pair
+    k = crypto.PKey()
+    k.generate_key(crypto.TYPE_RSA, 4096)
+    # create a self-signed cert
+    cert = crypto.X509()
+    cert.get_subject().C = countryName
+    cert.get_subject().ST = stateOrProvinceName
+    cert.get_subject().L = localityName
+    cert.get_subject().O = organizationName
+    cert.get_subject().OU = organizationUnitName
+    cert.get_subject().CN = commonName
+    cert.get_subject().emailAddress = emailAddress
+    cert.set_serial_number(serialNumber)
+    cert.gmtime_adj_notBefore(validityStartInSeconds)
+    cert.gmtime_adj_notAfter(validityEndInSeconds)
+    cert.set_issuer(cert.get_subject())
+    cert.set_pubkey(k)
+    cert.sign(k, 'sha512')
+
+    return cert
 
 
 def main(args=None):
@@ -261,7 +301,7 @@ def main(args=None):
     # server_args.key_file=None
     # server_args.host='0.0.0.0'
     # server_args.port=8080
-    # server_args.record_to=None
+    # server_args.record_path=None
     # server_args.verbose=None
     # print(server_args)
 
@@ -269,6 +309,24 @@ def main(args=None):
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
+
+    # args_cert_file = "/ros_ws/selfsigned.crt"
+    # args_key_file = "/ros_ws/private.key"
+    if args_temp_cert:
+        cert = generate_cert()
+
+        cert_file = tempfile.NamedTemporaryFile(delete=False)
+        args_cert_file = cert_file.name
+        # KEY_FILE = "private.key",
+        # CERT_FILE="selfsigned.crt"):
+        # with open(CERT_FILE, "wt") as f:
+        cert_file.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"))
+        cert_file.close()
+
+        key_file = tempfile.NamedTemporaryFile(delete=False)
+        args_key_file = key_file.name
+        # with open(KEY_FILE, "wt") as f:
+        key_file.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))
 
     if args_cert_file and args_key_file:
         ssl_context = ssl.SSLContext()

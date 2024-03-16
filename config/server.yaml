@@ -1,0 +1,17 @@
+web_server:
+  ros__parameters:
+
+    video:
+      topic_name_pub: "/color_camera/image_raw"
+#      video.record_path: ""
+
+    server:
+        host: "0.0.0.0"
+        port: 8080
+        verbose: False
+#        root_path: ""
+
+      ssl:
+#        cert_file: "/ros_ws/selfsigned.crt"
+#        key_file: "/ros_ws/private.key"
+        temp_cert: True
