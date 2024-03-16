@@ -9,7 +9,7 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
-        ('share/' + package_name, ['package.xml', 'ssl/ssl-proxy-linux-amd64']),
+        ('share/' + package_name, ['package.xml']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -23,7 +23,4 @@ setup(
             'web_server = kaiaai_python.server:main',
         ],
     },
-    scripts=[
-        'scripts/ssl_proxy.sh',
-    ],
 )
