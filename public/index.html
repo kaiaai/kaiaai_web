@@ -295,6 +295,12 @@
     function say(text) { document.getElementById('status').innerHTML = text; }
   </script>
   <script>
+    function on_data_message(evt) {
+      console.log(evt.data);
+    };
+    webrtc_wrapper.on_data_message = on_data_message;
+  </script>
+  <script>
   function toggle_vis(id) {
     var x = document.getElementById(id);
     console.log(id, x.style.display);

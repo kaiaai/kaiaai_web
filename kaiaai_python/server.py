@@ -34,6 +34,13 @@ logger = None
 pcs = set()
 relay = MediaRelay()
 
+dc = None
+
+async def send_webrtc_message(msg):
+  global dc
+  if dc != None:
+    dc.send(msg)
+
 
 class VideoTransformTrack(MediaStreamTrack):
     """
@@ -142,6 +149,8 @@ async def offer(request):
 
     @pc.on("datachannel")
     def on_datachannel(channel):
+        global dc
+        dc = channel
         @channel.on("message")
         def on_message(message):
             if isinstance(message, str) and message.startswith("ping"):
@@ -236,10 +245,20 @@ class ROS2BridgeNode(Node):
 
         self.publisher_ = self.create_publisher(Image, args_image_topic, 10)
         self.bridge = CvBridge()
+
+        # Temporary
+        self.timer = self.create_timer(1, self.timer_callback)
+        self.i = 0
+
     def publish_image(self, img):
         # Input cv::Mat
         self.publisher_.publish(self.bridge.cv2_to_imgmsg(img))
         # logger.debug('Publishing image')
+
+    def timer_callback(self):
+        # Send WebRTC data message
+        asyncio.run(send_webrtc_message("Data message " + str(self.i)))
+        self.i += 1
 
 
 def spin_ros2():

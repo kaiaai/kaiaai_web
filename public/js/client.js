@@ -10,6 +10,9 @@ var pc = null;
 // data channel
 var dc = null, dcInterval = null;
 
+var webrtc_wrapper = {};
+webrtc_wrapper.on_data_message = null;
+
 function createPeerConnection() {
     var config = {
         sdpSemantics: 'unified-plan'
@@ -168,6 +171,9 @@ function start() {
                 dataChannelLog.textContent += ' RTT ' + elapsed_ms + ' ms\n';
             }
         });
+        if (webrtc_wrapper.on_data_message) {
+           dc.addEventListener('message', webrtc_wrapper.on_data_message);
+        };
     }
 
     // Build media constraints.
