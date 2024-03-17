@@ -288,7 +288,7 @@
         say('scroll ' + document.body.scrollHeight + 'x' + document.body.scrollWidth);
         exprName = 'default';
         face.setExpression(exprName);
-        myTimer = setInterval(onTimer, 1000);
+        //myTimer = setInterval(onTimer, 1000);
       };
     };
 
@@ -297,6 +297,10 @@
   <script>
     function on_data_message(evt) {
       console.log(evt.data);
+      if (evt.data.startsWith('{')) {
+        var cmd = JSON.parse(evt.data);
+        face.setExpression(cmd.face_expression);        
+      }
     };
     webrtc_wrapper.on_data_message = on_data_message;
   </script>

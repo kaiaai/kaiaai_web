@@ -34,6 +34,12 @@ logger = None
 pcs = set()
 relay = MediaRelay()
 
+face_expressions = ["annoyed", "anxious", "apologetic", "awkward", "blinking", "bored", "crying",
+      "default", "determined", "embarrased", "evil", "excited", "exhausted", "flustered", "furious",
+      "giggle", "happy", "in-love", "mischievous", "realized-something", "sad", "sassy", "scared",
+      "shocked", "snoozing", "starstruck", "stuck-up", "thinking", "tired", "upset", "winking",
+      "wow"]
+
 dc = None
 
 async def send_webrtc_message(msg):
@@ -247,7 +253,7 @@ class ROS2BridgeNode(Node):
         self.bridge = CvBridge()
 
         # Temporary
-        self.timer = self.create_timer(1, self.timer_callback)
+        self.timer = self.create_timer(2, self.timer_callback)
         self.i = 0
 
     def publish_image(self, img):
@@ -257,8 +263,12 @@ class ROS2BridgeNode(Node):
 
     def timer_callback(self):
         # Send WebRTC data message
-        asyncio.run(send_webrtc_message("Data message " + str(self.i)))
-        self.i += 1
+        global face_expressions
+        expression = face_expressions[self.i]
+        msg_json = {'face_expression': expression}
+        msg_json_string = json.dumps(msg_json)
+        asyncio.run(send_webrtc_message(msg_json_string))
+        self.i = 0 if self.i >= len(face_expressions) else self.i + 1
 
 
 def spin_ros2():
