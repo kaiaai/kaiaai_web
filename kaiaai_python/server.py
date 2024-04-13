@@ -268,7 +268,7 @@ class ROS2BridgeNode(Node):
         msg_json = {'face_expression': expression}
         msg_json_string = json.dumps(msg_json)
         asyncio.run(send_webrtc_message(msg_json_string))
-        self.i = 0 if self.i >= len(face_expressions) else self.i + 1
+        self.i = 0 if self.i >= len(face_expressions) - 1 else self.i + 1
 
 
 def spin_ros2():
