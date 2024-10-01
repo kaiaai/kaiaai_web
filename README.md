@@ -1,6 +1,14 @@
-# Image/Audio sensing and decision making for Kaia.ai robots
+# Kaia.ai Web stack
 
-Implements this functionality:
+Web frontend and backend including aiohttp web server,
+(TODO) React JS app(s), SSL, WebRTC image and audio,
+WebRTC-to-ROS2 bridge for Kaia.ai robots.
+
+Frontend implements this functionality:
+- TODO React JS app(s)
+
+Backend implements this functionality:
+- TODO routes for web apps
 - WebRTC setup
   - video, audio and data channels
   - a WebRTC-to-ROS2 bridge
@@ -12,14 +20,12 @@ Implements this functionality:
 - Audio processing (TODO)
 - Decision making (TODO)
 
-## PC Setup Instructions
+## Setup Instructions
 
-- Windows PC setup instructions [here](https://kaia.ai/blog/local-pc-setup-windows/)
-- Windows PC setup instructions [video](https://youtu.be/XOc5kCE3MC0).
-- Linux PC setup
-  - install Docker
+kaiaai_web is installed as part of the Kaia.ai build
+using https://github.com/kaiaai/install
 
-- run `docker pull kaiaai/kaiaai:humble` or `docker pull kaiaai/kaiaai:iron`
+See https://github.com/kaiaai/kaiaai for general setup.
 
 ## Bringup Instructions
 
@@ -46,7 +52,10 @@ ros2 run kaiaai_python web_server
 
 ## Release notes
 
-### v0.1.0 in debug
+### v0.2.0
+- renamed package from `kaiaai_python` to `kaiaai_web`
+
+### v0.1.0
 - set up aiohttp web server with aiortc WebRTC
 - added WebRTC-to-ROS2 bridge
   - browser webcam video streams over WebRTC, gets published to ROS2

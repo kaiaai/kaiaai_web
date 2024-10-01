@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>kaiaai_python</name>
+  <name>kaiaai_web</name>
   <version>0.0.0</version>
-  <description>Kaia.ai robot sensing, decision making</description>
+  <description>Kaia.ai web stack</description>
   <maintainer email="iliao@kaia.ai">Ilia O.</maintainer>
   <url type="website">https://kaia.ai</url>
-  <url type="repository">https://github.com/kaiaai/kaiaai_python</url>
-  <url type="bugtracker">https://github.com/kaiaai/kaiaai_python/issues</url>
+  <url type="repository">https://github.com/kaiaai/kaiaai_web</url>
+  <url type="bugtracker">https://github.com/kaiaai/kaiaai_web/issues</url>
   <license>Apache-2.0</license>
 
   <depend>rclpy</depend>

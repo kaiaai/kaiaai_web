@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 import os
 from glob import glob
 
-package_name = 'kaiaai_python'
+package_name = 'kaiaai_web'
 
 setup(
     name=package_name,
@@ -19,12 +19,12 @@ setup(
     zip_safe=True,
     maintainer='Ilia O.',
     maintainer_email='iliao@kaia.ai',
-    description='Kaia.ai robot sensing, decision making',
+    description='Kaia.ai web stack',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'web_server = kaiaai_python.server:main',
+            'web_server = kaiaai_web.server:main',
         ],
     },
 )
